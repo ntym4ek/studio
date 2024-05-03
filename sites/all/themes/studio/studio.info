@@ -1,0 +1,8 @@
+name = Studio
+description = Тема на базе Custom Base Theme
+core = 7.x
+base theme = cbtheme
+
+stylesheets[all][] = css/studio.css
+
+
