@@ -1354,13 +1354,13 @@ fieldset {
   cursor: pointer;
   background: #fff;
   border-radius: 50px;
-  border: 0.5rem solid #c9995b85; }
+  border: 0.5rem solid #c9995b85;
+  font-size: 2rem; }
   #back-to-top .icon {
-    color: #c9995b;
-    font-size: 3rem; }
-  @media only screen and (min-width: 768px) {
-    #back-to-top .icon {
-      font-size: 2rem; } }
+    color: #c9995b; }
+  @media only screen and (min-width: 1024px) {
+    #back-to-top {
+      font-size: 1.4rem; } }
 
 .icon {
   display: flex;
@@ -1823,8 +1823,6 @@ ul.menu {
     margin: 0;
     padding: 0;
     list-style: none; }
-  ul.menu li.expanded > a {
-    cursor: default; }
 
 .menu-wr {
   display: flex;
