@@ -1,0 +1,71 @@
+<?php
+
+/**
+ * Вернуть массив с информацией о препарате
+ */
+function sec_catalog_get_product_info($node)
+{
+  $key = $node->nid ?? $node;
+  $product = &drupal_static(__FUNCTION__ . serialize($key));
+
+  if (empty($product)) {
+    $product = [];
+    $node_wr = entity_metadata_wrapper('node', $node);
+    $node_wr->language($GLOBALS['language']->language);
+    if ($node_wr->value()) {
+      $product['id'] = $node_wr->getIdentifier();
+      $product['title'] = trim($node_wr->label());
+
+      $product['url'] = drupal_get_path_alias('node/' . $node_wr->getIdentifier());
+
+      // для совместимости, тк название у нас везде в label
+      $product['label'] = $product['title'];
+
+      $product['summary'] = $node_wr->body->summary->value();
+
+      // изображения
+      foreach ($node_wr->field_images->getIterator() as $image_wr) {
+        $image_uri = $image_wr->file->value()->uri;
+        $product['images'][] = [
+          'uri' => $image_uri,
+          'teaser' => image_style_url('card_product', $image_uri),
+          'full' => file_create_url($image_uri),
+        ];
+      }
+
+      // категория
+      $product['category'] = [
+        'id' => $node_wr->field_item_category->getIdentifier(),
+        'label' => $node_wr->field_item_category->label(),
+      ];
+    }
+  }
+
+  return $product;
+}
+
+function sec_catalog_get_new_items()
+{
+  $products = [];
+
+  $dbr = db_select('node', 'n');
+  $dbr->condition('n.type', 'item');
+  $dbr->condition('n.status', '1');
+  $dbr->addField('n', 'nid');
+  $dbr->orderBy('n.title');
+  if ($nodes = $dbr->execute()->fetchCol()) {
+    $products = node_load_multiple($nodes);
+  }
+
+  return $products;
+}
+
+function sec_catalog_views_pre_render($view) {
+  if ($view->name == 'catalog') {
+    // get the $tid from the view's args
+    $term = taxonomy_term_load( $view->args[0] );
+    if( $term ){
+      $view->build_info['title'] = $term->name;
+    }
+  }
+}

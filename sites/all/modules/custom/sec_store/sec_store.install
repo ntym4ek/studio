@@ -1,0 +1,143 @@
+<?php
+
+/**
+ * Implements hook_enable()
+ */
+function sec_store_enable()
+{
+  $entity_type = new EntityType();
+  $entity_type->name = "order";
+  $entity_type->label = "Order";
+  $entity_type->addProperty('created', 'Created', 'integer');
+  $entity_type->addProperty('changed', 'Changed', 'integer');
+  $entity_type->addProperty('uid', 'User ID', 'integer');
+  $entity_type->save();
+
+  // добавляем бандл
+  $bundle = new Bundle();
+  $bundle->name = $entity_type->name;
+  $bundle->label = "Order";
+  $bundle->entity_type = $entity_type->name;
+  $bundle->save();
+
+  // обновить кэш полей, тк, возможно, что модуль entityreference
+  // был только что включен
+  field_info_cache_clear();
+
+  // создать поле Список продуктов (Field Collection)
+  // и прикрепить его к сущности Заказ
+  field_create_field([
+    'field_name' => 'field_order_items',
+    'type' => 'field_collection',
+    'cardinality' => FIELD_CARDINALITY_UNLIMITED,
+  ]);
+  field_create_instance([
+    'field_name' => 'field_order_items',
+    'entity_type' => 'order',
+    'bundle' => 'order',
+    'label' => 'Products list',
+    'widget' => ['type' => 'field_collection_embed'],
+  ]);
+
+  // создать поле Статус заказа
+  field_create_field([
+    'field_name' => 'field_order_status',
+    'type' => 'list_text',
+    'settings' => [
+      'allowed_values' => [
+        ORDER_STATUS_CART => t('Cart'),
+        ORDER_STATUS_PROCESSING => t('Processing'),
+        ORDER_STATUS_DELIVERING => t('Delivering'),
+        ORDER_STATUS_COMPLETED => t('Completed'),
+        ORDER_STATUS_CANCELLED => t('Cancelled'),
+      ],
+    ],
+  ]);
+  field_create_instance([
+    'field_name' => 'field_order_status',
+    'entity_type' => 'order',
+    'bundle' => 'order',
+    'label' => 'Status',
+    'widget' => ['type' => 'options_select'],
+  ]);
+
+  // создать поля Препарат и Количество для записи Списка продуктов
+  field_create_field([
+    'field_name' => 'field_order_item_product',
+    'type' => 'entityreference',
+    'cardinality' => 1,
+    'settings' => [
+      'target_type' => 'node',
+      'target_bundle' => 'preparation',
+      'handler' => 'base',
+    ],
+  ]);
+  field_create_instance([
+    'field_name' => 'field_order_item_product',
+    'entity_type' => 'field_collection_item',
+    'bundle' => 'field_order_items',
+    'label' => 'Product',
+    'settings' => ['hide_ids' => true],
+  ]);
+  field_create_field([
+    'field_name' => 'field_order_item_qty',
+    'type' => 'number_integer',
+    'cardinality' => 1,
+  ]);
+  field_create_instance([
+    'field_name' => 'field_order_item_qty',
+    'entity_type' => 'field_collection_item',
+    'bundle' => 'field_order_items',
+    'label' => 'Quantity',
+    'settings' => ['min' => 1],
+  ]);
+}
+
+/**
+ * Implements hook_disable()
+ */
+function sec_store_disable()
+{
+  if ($entity_type = EntityType::loadByName('order')) {
+    if ($bundles = Bundle::loadByMachineName($entity_type->name)) {
+      foreach ($bundles as $bundle) {
+        $bundle->delete();
+      }
+    }
+
+    $entity_type->delete();
+  }
+
+  if (field_info_field('field_order_items')) {
+    field_delete_instance([
+      'field_name' => 'field_order_items',
+      'entity_type' => 'order',
+      'bundle' => 'order',
+    ]);
+    field_delete_field('field_order_items');
+  }
+  if (field_info_field('field_order_status')) {
+    field_delete_instance([
+      'field_name' => 'field_order_status',
+      'entity_type' => 'order',
+      'bundle' => 'order',
+    ]);
+    field_delete_field('field_order_status');
+  }
+  if (field_info_field('field_order_item_product')) {
+    field_delete_instance([
+      'field_name' => 'field_order_item_product',
+      'entity_type' => 'field_collection_item',
+      'bundle' => 'field_order_items',
+    ]);
+    field_delete_field('field_order_item_product');
+  }
+  if (field_info_field('field_order_item_qty')) {
+    field_delete_instance([
+      'field_name' => 'field_order_item_qty',
+      'entity_type' => 'field_collection_item',
+      'bundle' => 'field_order_items',
+    ]);
+    field_delete_field('field_order_item_qty');
+  }
+}

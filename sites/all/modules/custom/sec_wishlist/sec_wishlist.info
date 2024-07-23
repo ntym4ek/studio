@@ -1,0 +1,7 @@
+name = Sec Wishlist
+description = Модуль, добавляющий функционал Избранного
+package = Custom
+core = 7.x
+
+dependencies[] = eck
+dependencies[] = entityreference

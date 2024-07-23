@@ -33,9 +33,7 @@
           </div>
           <div class="col col-2 full-height">
             <div class="branding">
-              <div class="brand">
-                <a href="<?php print url('<front>'); ?>"><?php print $site_name; ?></a>
-              </div>
+              <div class="logo"><a href="<?php print url('<front>'); ?>"><img src="<?php print $logo; ?>" /></a></div>
             </div>
           </div>
           <div class="col col-3 full-height hide-xs show-lg">
@@ -83,7 +81,7 @@
               <div class="container full-height">
                 <div class="banner-title-wrapper">
                   <?php if (!empty($banner_title_prefix)): ?><div class="banner-prefix"><?php print $banner_title_prefix; ?></div><?php endif; ?>
-                  <?php if ($banner_title): ?><div class="banner-title"><?php print $banner_title; ?></div><?php endif; ?>
+                  <?php if (!empty($banner_title)): ?><div class="banner-title"><?php print $banner_title; ?></div><?php endif; ?>
                   <?php if (!empty($banner_title_suffix)): ?><div class="banner-suffix"><?php print $banner_title_suffix; ?></div><?php endif; ?>
                 </div>
               </div>
@@ -170,68 +168,28 @@
     <div class="page-footer">
       <div class="container">
         <div class="row">
-          <div class="col-xs-12 col-md-4 col-lg-3">
-            <div class="b">
-              <div class="branding">
-                <div class="brand">
-                  <a href="<?php print url('<front>'); ?>"><?php print $site_name; ?></a>
-                </div>
-              </div>
-              <?php if (!empty($phone_reception)): ?>
-              <div class="phone">
-                <a href="tel:+<?php print $phone_reception['raw']; ?>" class="c0py"><?php print $phone_reception['formatted']; ?></a>
-              </div>
-              <?php endif;?>
-              <?php if (!empty($email_reception)): ?>
-              <div class="email">
-                <a href="mailto:<?php print $email_reception; ?>" class="c0py"><?php print $email_reception; ?></a>
-              </div>
-              <?php endif;?>
+          <div class="col-xs-6 col-lg-4">
+            <div class="menu platforms p1">
+              <ul>
+                <li><a href="#" rel="nofollow" target="_blank" title="<?php print t('Ozon'); ?>"><?php print t('Ozon'); ?></a></li>
+                <li><a href="#" rel="nofollow" target="_blank" title="<?php print t('Yandex Market'); ?>"><?php print t('Yandex Market'); ?></a></li>
+              </ul>
             </div>
           </div>
 
-          <div class="col-xs-12 col-md-8 col-lg-6">
-            <div class="row">
-              <div class="col-xs-12 col-md-6">
-                <div class="menu about">
-                  <div class="title"><?php print t('About us'); ?></div>
-                  <ul>
-                    <li><a href="<?php print url('node/7'); ?>"><?php print t('Information', [], ['context' => 'menu']); ?></a></li>
-                    <li><a href="<?php print url('otzyvy'); ?>"><?php print t('Reviews'); ?></a></li>
-                    <?php if (isset($price_list_url)): ?>
-                      <li><a id="pricelist" href="<?php print $price_list_url; ?>" title="<?php print t('Download price-list'); ?>" download><?php print t('Price-list'); ?></a></li>
-                    <?php endif;?>
-                    <?php if (isset($catalog_url)): ?>
-                      <li><a id="catalog_pdf" href="<?php print $catalog_url; ?>" title="<?php print t('Download catalog'); ?>" download><?php print t('Catalog for'); ?> <?php print date('Y'); ?> <?php print t('year'); ?></a></li>
-                    <?php endif;?>
-                  </ul>
-                </div>
-              </div>
-              <div class="col-xs-12 col-md-6">
-                <div class="menu contacts">
-                  <div class="title"><?php print t('Contacts'); ?></div>
-                  <ul>
-                    <li><a href="<?php print url('kontakty'); ?>"><?php print t('Main office'); ?></a></li>
-                    <li><a href="<?php print url('predstaviteli'); ?>"><?php print t('Regional representatives'); ?></a></li>
-                    <li><a href="<?php print url('filialy'); ?>"><?php print t('Find us'); ?></a></li>
-                    <li class="socials">
-                      <a href="https://vk.com/public147827276" rel="nofollow" target="_blank" title="<?php print t('VK'); ?>"><i class="icon icon-rounded icon-068 hover-raise"></i></a>
-                      <a href="https://ok.ru/group/54447113371728" rel="nofollow" target="_blank" title="<?php print t('OK'); ?>"><i class="icon icon-rounded icon-090 hover-raise"></i></a>
-                      <a href="https://youtube.com/@kccc_td" rel="nofollow" target="_blank" title="YouTube"><i class="icon icon-rounded icon-069 hover-raise"></i></a>
-                      <a href="https://dzen.ru/td_kccc" rel="nofollow" target="_blank" title="<?php print t('Yandex Dzen'); ?>"><i class="icon icon-rounded icon-070 hover-raise"></i></a>
-                      <a href="https://t.me/tdkccc" rel="nofollow" target="_blank" title="Telegram"><i class="icon icon-rounded icon-091 hover-raise"></i></a>
-                    </li>
-                  </ul>
-                </div>
-              </div>
+          <div class="hide-xs show-lg col-lg-4">
+            <div class="branding">
+              <div class="logo"><a href="<?php print url('<front>'); ?>"><img src="<?php print $logo; ?>" /></a></div>
             </div>
           </div>
 
-          <div class="col-xs-12 col-md-6 hide-md show-lg col-md-offset-3 col-lg-3 col-lg-offset-0">
-            <div class="subscribe">
-              <div class="title"><?php print t('Subscribe our mail list'); ?></div>
-              <p><?php print t('New products, discounts, offers!'); ?></p>
-              <?php print render($subscribe_form); ?>
+          <div class="col-xs-6 col-lg-4">
+            <div class="menu platforms p2">
+              <ul>
+                <li><a href="#" rel="nofollow" target="_blank" title="<?php print t('VKontakte'); ?>"><?php print t('VKontakte'); ?></a></li>
+                <li><a href="#" rel="nofollow" target="_blank" title="<?php print t('Odnoklassniki'); ?>"><?php print t('Odnoklassniki'); ?></a></li>
+                <li><a href="#" rel="nofollow" target="_blank" title="<?php print t('Yarmarka Masterov'); ?>"><?php print t('Yarmarka Masterov'); ?></a></li>
+              </ul>
             </div>
           </div>
         </div>

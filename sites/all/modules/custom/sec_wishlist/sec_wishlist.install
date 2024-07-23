@@ -1,0 +1,69 @@
+<?php
+
+/**
+ * Implements hook_enable()
+ */
+function sec_wishlist_enable()
+{
+  $entity_type = new EntityType();
+  $entity_type->name = "wishlist";
+  $entity_type->label = "Wishlist item";
+  $entity_type->addProperty('created', 'Created', 'integer');
+  $entity_type->addProperty('uid', 'User ID', 'integer');
+  $entity_type->save();
+
+  // добавляем бандл
+  $bundle = new Bundle();
+  $bundle->name = $entity_type->name;
+  $bundle->label = "Wishlist item";
+  $bundle->entity_type = $entity_type->name;
+  $bundle->save();
+
+  // обновить кэш полей, тк, возможно, что модуль entityreference
+  // был только что включен
+  field_info_cache_clear();
+
+  // создать поле лайкнутой сущности
+  // и прикрепить к сущности Wishlist
+  field_create_field([
+    'field_name' => 'field_wishlist_entity',
+    'type' => 'entityreference',
+    'cardinality' => 1,
+    'settings' => [
+      'target_type' => 'node',
+      'handler' => 'base',
+    ],
+  ]);
+  field_create_instance([
+    'field_name' => 'field_wishlist_entity',
+    'label' => t('Wishlist entity'),
+    'entity_type' => 'wishlist',
+    'bundle' => 'wishlist',
+  ]);
+}
+
+/**
+ * Implements hook_disable()
+ */
+function sec_wishlist_disable()
+{
+  if ($entity_type = EntityType::loadByName('wishlist')) {
+    if ($bundles = Bundle::loadByMachineName($entity_type->name)) {
+      foreach ($bundles as $bundle) {
+        $bundle->delete();
+      }
+    }
+
+    $entity_type->delete();
+  }
+
+  $instance = [
+    'field_name' => 'field_wishlist_entity',
+    'entity_type' => 'wishlist',
+    'bundle' => 'wishlist',
+  ];
+  if (field_info_field('field_wishlist_entity')) {
+    field_delete_instance($instance);
+    field_delete_field($instance['field_name']);
+  }
+}

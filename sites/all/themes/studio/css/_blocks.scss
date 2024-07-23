@@ -1,0 +1,8 @@
+@import "variables"; // чтобы переменные не подсвечивались
+
+.block-new-items {
+  .carousel-products {
+    .swiper-slide { height: auto; }
+  }
+
+}

@@ -1,8 +1,21 @@
 @import "variables"; // чтобы переменные не подсвечивались
 
+:root {
+  --swiper-navigation-size: 60px;
+  --swiper-navigation-color: #c9995b;
+  --swiper-theme-color: #c9995b;
+}
+
 a {
   color: inherit;
+  transition: color 150ms;
   &:hover { color: $brand-color; }
+}
+
+.image img {
+  display: block;
+  object-fit: cover;
+  width: 100%; height: 100%;
 }
 
 .page-header {
@@ -11,7 +24,7 @@ a {
   .col-3 { flex: 1000px; }
   .branding {
     .brand {
-      color: $brand-color; font-size: 3em; font-weight: 700;
+      color: $brand-color; font-size: 2em; font-weight: 700; line-height: 1.4;
       text-transform: uppercase;
     }
   }
@@ -25,13 +38,74 @@ a {
     > li.first > a { padding-left: 0; }
     > li.last > a { padding-right: 0; }
   }
+
+  @media #{$tablet} {
+    .branding .brand { font-size: 3em; }
+  }
 }
 
 .page-footer {
   .branding {
-    .brand {
-      color: $brand-color; font-size: 2em; font-weight: 700;
-      text-transform: uppercase; text-align: center;
+    text-align: center;
+    .logo img { width: 130px; }
+  }
+  .menu {
+    font-size: $font-size-small;
+    ul {
+      padding: 0;
+      li {
+        text-transform: uppercase;
+        list-style: none;
+        margin-bottom: .5rem;
+      }
     }
+    &.platforms.p2 {
+      text-align: right;
+    }
+  }
+}
+
+.carousel {
+  position: relative;
+}
+
+// --- Элементы оформления -------------------------------------------------------------
+.underline {
+  background: $brand-color;
+  width: 8em; height: 0.5rem;
+  margin: 0.5rem auto;
+  &.underline-left {
+    margin: 0;
+  }
+}
+
+.section-title {
+  font-size: $font-size-h3; font-weight: 700; text-align: center; text-transform: uppercase;
+  padding: 1rem 0 2rem;
+  position: relative;
+
+  .underline {
+    width: 4em; height: 3px;
+    margin: 0.5rem auto 0;
+  }
+
+  &.invert {
+    background: $brand-color;
+    color: #fff;
+    padding: 1rem 2rem;
+    .underline { background: #fff; }
+  }
+
+  .more-all {
+    color: $brand-color; font-size: $font-size-base; font-weight: 500; text-align: center; text-transform: none;
+  }
+
+
+  @media #{$tablet} {
+    &:not(.invert) { padding-bottom: 3rem; }
+    .more-all { position: absolute; top: 2rem; right: 2rem; }
+  }
+  @media #{$laptop} {
+    font-size: $font-size-h3;
   }
 }

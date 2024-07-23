@@ -1,0 +1,34 @@
+<?php
+
+/**
+ * Implements hook_menu().
+ */
+function sec_about_menu()
+{
+  $items['about'] = [
+    'title' => 'About',
+    'page callback' => 'sec_about_page',
+    'access arguments' => ['access content'],
+    'type' => MENU_NORMAL_ITEM,
+  ];
+
+  return $items;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function sec_about_theme()
+{
+  return [
+    'about_page' => [
+      'variables' => [],
+      'template' => 'templates/about-page',
+    ]
+  ];
+}
+
+function sec_about_page()
+{
+  return theme('about_page');
+}

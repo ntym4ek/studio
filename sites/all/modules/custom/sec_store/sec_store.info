@@ -1,0 +1,15 @@
+name = Sec Store
+description = Модуль, добавляющий функционал оформления заказа
+package = Custom
+core = 7.x
+
+dependencies[] = eck
+dependencies[] = entityreference
+dependencies[] = field_collection
+
+
+;;;;;;;;;;;;;;;;;;;;;
+;; Scripts
+;;;;;;;;;;;;;;;;;;;;;
+
+scripts[] = 'js/sec_store.js'

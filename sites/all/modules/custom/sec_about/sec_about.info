@@ -1,0 +1,5 @@
+name = Раздел Обо мне
+description = Добавляет раздел
+package = Custom
+core = 7.x
+

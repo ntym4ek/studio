@@ -1,0 +1,159 @@
+<?php
+
+
+/**
+ * Implements hook_menu().
+ */
+function ext_node_menu()
+{
+  return [
+    'need-login' => [
+      'page callback' => 'ext_node_need_login',
+      'access arguments' => ['access content'],
+      'type' => MENU_CALLBACK,
+    ],
+  ];
+}
+
+/**
+ * Callback для переадресации на страницу авторизации с сообщением
+ */
+function ext_node_need_login()
+{
+  drupal_set_message(t('You have to log in to access to this function.'));
+
+  // если установлена переадресация, то после авторизации перейти по адресу
+  if (!empty($_GET['destination'])) {
+    $query = ['destination' => $_GET['destination']];
+    unset($_GET['destination']);
+  }
+
+  drupal_goto('user/login', !empty($query) ? ['query' => $query] : []);
+}
+
+/**
+ * Implements hook_menu_alter()
+ */
+function ext_node_menu_alter(&$items)
+{
+  // убрать материалы с Главной
+  $items['node']['page callback'] = 'ext_node_empty_front_page_callback';
+
+  // Кнопка "Удалить" в локальные задачи материала
+  // http://xandeadx.ru/blog/drupal/339
+  $items['node/%node/delete']['context'] = MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE;
+}
+
+/**
+ * menu callback
+ * убрать материалы с главной
+ */
+function ext_node_empty_front_page_callback()
+{
+  drupal_set_title('');
+  return [];
+}
+
+/**
+ * Implements hook_preprocess_page().
+ */
+function ext_node_preprocess_page(&$vars)
+{
+  if (isset($vars['node']) && $vars['node']->type == 'item') {
+    $vars['is_title_on'] = false;
+  }
+}
+
+/**
+ * Implements hook_preprocess_node().
+ */
+function ext_node_preprocess_node(&$vars)
+{
+  $node = $vars['node'];
+
+  // ссылки всегда скрыты
+  hide($vars["content"]["links"]);
+
+  // -- Общие для всех видов просмотра -----------------------------------------
+  // -- Изображения
+  $images = [];
+  if (!empty($vars['content']['field_images']['#items'])) {
+    foreach ($vars['content']['field_images']['#items'] as $key => $file) {
+      $images[] = $vars['content']['field_images'][$key];
+    }
+  }
+  elseif (!empty($vars['content']['field_image'])) {
+    $images[] = $vars['content']['field_image'][0];
+  }
+  $vars['images'] = $images;
+
+  if ($node->type == 'item') {
+    $product_info = sec_catalog_get_product_info($node->nid);
+
+    $vars['title'] = $product_info['title'];
+    $vars['label'] = $product_info['label'];
+
+    // кнопка Добавить в Избранное
+    if (module_exists('sec_wishlist')) {
+      $in_wishlist = (bool)sec_wishlist_get_item_wishlist_id($node->nid);
+      $vars['wishlist_btn'] = theme('wishlist_btn', ['in_list' => $in_wishlist, 'entity_id' => $node->nid]);
+    }
+
+    // кнопка Поделиться
+    // -- Полная ссылка для социальных шар
+    $url = url('node/' . $node->nid, ['absolute' => true]);
+    $title = t('About @site item', ['@site' => variable_get('site_name')]);
+    $text = t('A link to the handmade at the website of @site.', ['@site' => variable_get('site_name')]);
+    $vars['share_btn'] = theme('share_btn', ['url' => $url, 'title' => $title, 'text' => $text]);
+
+    if (module_exists('sec_store')) {
+      // кнопка Заказать продукт
+      $vars['add_to_cart_btn'] = '';
+      $in_cart = sec_store_check_product_in_users_cart($node->nid);
+      $vars['add_to_cart_btn'] = theme('cart_btn', ['in_cart' => $in_cart, 'product_id' => $node->nid]);
+    } else {
+      // кнопка на форму обратной связи
+      $vars['add_to_cart_btn'] = l(t('I want such'), 'node/4', ['attributes' => ['class' => ['btn', 'btn-brand']]]);
+    }
+  }
+
+  // -- Полный вид просмотра ---------------------------------------------------
+  if ($vars['view_mode'] == 'full') {
+    if ($node->type == 'item') {
+
+    }
+
+  }
+
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function ext_node_form_alter(&$form, &$form_state, $form_id)
+{
+  if ($GLOBALS['theme'] != 'seven' && isset($form["revision_information"]["#access"])) {
+    $form["revision_information"]["#access"] = false;
+    $form["options"]["#weight"] = $form["author"]["#weight"] - 1;
+  }
+}
+
+/**
+ * Implements hook_form_FORMID_alter().
+ */
+function ext_node_form_node_form_alter(&$form, &$form_state)
+{
+  if (in_array($form["type"]["#value"], ['article', 'item'])) {
+    // убрать неиспользуемые опции
+//    $form["options"]["sticky"]["#access"] = false;
+
+    // изменить формат поля Body на "Редактор текста", если формат ранее не был установлен
+    $lang = $GLOBALS['language']->language;
+    if (isset($form["body"][$lang][0]["#type"]) && $form["body"][$lang][0]["#type"] == 'text_format' && !$form["body"][$lang][0]["#format"]) {
+      $form["body"][$lang][0]["#format"] = 'filtered_html';
+    }
+  }
+}
+
+
+

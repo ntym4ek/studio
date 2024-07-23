@@ -2,7 +2,7 @@
 
 // шрифт
 //
-$font-url:              'https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap';
+$font-url:              'https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap';
 
 // цвета
 //
@@ -14,7 +14,7 @@ $page-bkg:                #fff;
 
 // шапка
 //
-$header-height:           15rem;
+$header-height:           12rem;
 $header-bkg:              #fff;
 $header-shadow:           none;
 $header-text:             $text-color;
@@ -24,6 +24,8 @@ $header-text:             $text-color;
 $menu-item-color:         $text-color;
 $menu-item-hover-color:   $brand-color;
 $menu-item-active-color:  $text-color;  // временно, тк все ссылки ведут на главную, в прод поставить $brand-color
+$menu-mobile-btn-color:   $brand-color;
+$menu-mobile-bkg:         $brand-color;
 
 // подвал
 //

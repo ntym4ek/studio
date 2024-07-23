@@ -1,0 +1,473 @@
+<?php
+
+const ADMIN_RID = 3;
+const EDITOR_RID = 4;
+
+/**
+ * Implements hook_menu_alter().
+ */
+function ext_user_menu_alter(&$items)
+{
+  // Заменить стандартный автокомплит выбора пользователя.
+  $items['user/autocomplete']['page callback'] = 'ext_user_user_autocomplete';
+}
+
+function ext_user_user_account_access()
+{
+  return user_edit_access($GLOBALS['user']);
+}
+
+/**
+ * Implements hook_module_implements_alter()
+ */
+function ext_user_module_implements_alter(&$implementations, $hook)
+{
+  // изменить порядок выполнения альтеров
+  if (in_array($hook, ['form_alter'])) {
+    // свой поставить последним, чтобы внести изменения после модуля profile2
+    $module = 'ext_user';
+    if (isset($implementations[$module])) {
+      $group = $implementations[$module];
+      unset($implementations[$module]);
+      $implementations[$module] = $group;
+    }
+  }
+}
+
+/**
+ * Implements hook_preprocess_HOOK().
+ */
+function ext_user_preprocess_user_profile(&$vars)
+{
+  // подготовить переменные для user-profile.tpl.php
+  if ($GLOBALS['theme'] != 'seven') {
+    $account = $vars['elements']['#account'];
+    $vars['user_info'] = ext_user_get_user_info($account->uid);
+  }
+}
+
+/**
+ * Implements hook_preprocess_HOOK().
+ */
+function ext_user_preprocess_menu_link(&$vars)
+{
+  if ($GLOBALS['theme'] != 'seven') {
+    if ($vars["element"]["#href"] == 'user' && user_is_logged_in() && $vars["element"]["#original_link"]["depth"] == 1) {
+      // сменить "Мой аккаунт" на Имя пользователя
+      $user_info = ext_user_get_user_info();
+      if ($user_info['main']['name']) {
+        $vars["element"]["#title"] = $user_info['main']['name'];
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_process_HOOK().
+ */
+function ext_user_process_page(&$vars)
+{
+  if (arg(0) == 'user') {
+    if (!$GLOBALS['user']->uid && isset($vars["tabs"])) {
+      $vars['is_title_on'] = false;
+      unset($vars["tabs"]);
+    }
+  }
+}
+
+/**
+ * Implements hook_user_insert().
+ */
+function ext_user_user_insert(&$edit, &$account, $category = NULL)
+{
+  // при регистрации нового пользователя установить уникальное имя: Пользователь #uid
+  $new_name = t('User ') . $account->uid;
+
+  db_update('users')
+    ->fields(array('name' => $new_name))
+    ->condition('uid', $account->uid)
+    ->execute();
+
+  $edit['name'] = $new_name;
+  $account->name = $new_name;
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function ext_user_form_user_pass_alter(&$form, &$form_state)
+{
+  if (!user_has_role(ADMIN_RID)) {
+    $form['#prefix'] =  '<div class="user-auth-form-wrapper">';
+    $form['#prefix'] .=   '<h1>' . t('Recover password') . '</h1>';
+    $form['#prefix'] .=   '<div class="user-links"><a href="/user/login">' . t('Log in', [], ['context' => 'account']) . '</a> ' . t('or') . ' <a href="/user/register">' . t('Register', [], ['context' => 'account']) . '</a></div>';
+    $form['#suffix'] =  '</div>';
+    $form['name']['#title'] = t('E-Mail');
+    $form["mail"]["#markup"] = t('The recovery link will be sent to E-Mail above.');
+    $form["actions"]["submit"]['#value'] = t('Submit');
+    $form["actions"]["submit"]['#attributes']['class'] = ['btn', 'btn-brand', 'btn-full-wide'];
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function ext_user_form_user_login_alter(&$form, &$form_state)
+{
+  // обёртка для темизации формы
+  $form['#prefix'] =  '<div class="user-auth-form-wrapper">';
+  $form['#prefix'] .=   '<h1>' . t('Log in', [], ['context' => 'account']) . '</h1>';
+  $form['#prefix'] .=   '<div class="user-links"><a href="/user/register">' . t('Register', [], ['context' => 'account']) . '</a> ' . t('or') . ' <a href="/user/password">' . t('Recover password') . '</a></div>';
+  $form['#suffix'] = '</div>';
+
+  // изменить вид полей
+  $form['name']['#title'] = t('E-Mail');
+  unset($form['name']['#description']);
+  $form["pass"]["#title"] = t('Password');
+  unset($form['pass']['#description']);
+
+  $form["actions"]["submit"]['#value'] = t('Submit');
+  $form["actions"]["submit"]['#attributes']['class'] = ['btn', 'btn-brand', 'btn-full-wide'];
+
+  // обработчики
+  $form['name']['#element_validate'][] = 'ext_user_login_name_validate';
+}
+
+/**
+ * Form element validation handler for the user login form.
+ * Allows users to authenticate by username OR email.
+ */
+function ext_user_login_name_validate($form, &$form_state)
+{
+  $user = ext_user_user_load_by_login($form_state['values']['name']);
+  if ($user->uid) {
+    $form_state['values']['name'] = $user->name;
+    return TRUE;
+  }
+
+  return FALSE;
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function ext_user_form_user_register_form_alter(&$form, &$form_state)
+{
+  if ($GLOBALS['theme'] != 'seven') {
+    // убрать необязательные поля
+    $form['account']['name']['#type'] = 'hidden';
+    $form['account']['name']['#value'] = 'ext_user_' . user_password();
+
+    // изменить вид полей
+    $form['account']['mail']['#title'] = 'E-Mail';
+    unset($form['account']['mail']['#description']);
+    $form['account']['pass']['#title'] = t('Password');
+    $form['account']['pass']['#type'] = 'textfield';
+    unset($form['account']['pass']['#description']);
+
+    $form["profile_main"]["#type"] = 'container';
+
+    // менять название кнопки нельзя, (user.admin.inc строка 27 привязана к дефолтному названию)
+    //    $form["actions"]["submit"]['#value'] = t('Submit');
+    $form["actions"]["submit"]['#attributes']['class'] = ['btn', 'btn-brand', 'btn-full-wide'];
+
+    $form["profile_main"]["label"]['#markup'] = '<h3>' . t('User') . '</h3>';
+    $form["profile_main"]["field_user_name"]['#prefix'] = '<div class="row"><div class="col-xs-12 col-md-6">';
+    $form["profile_main"]["field_user_name"]['#suffix'] = '</div>';
+    $form["profile_main"]["field_user_surname"]['#prefix'] = '<div class="col-xs-12 col-md-6">';
+    $form["profile_main"]["field_user_surname"]['#suffix'] = '</div></div>';
+
+    $form["profile_company"]["#type"] = 'container';
+    $form["profile_company"]["label"] = [
+      '#markup' => '<h3>' . t('Company') . '</h3>',
+      '#weight' => -99,
+    ];
+
+    $form["admin_language"]["admin_language"]["#default_value"] = 'default';
+    $form["admin_language"]["#access"] = false;
+    $form["locale"]["#access"] = false;
+
+
+    // если пользователя редактирует Менеджер
+    if (user_has_role(EDITOR_RID)) {
+      if (isset($form["fz152_agreement"])) $form["fz152_agreement"]["#access"] = false;
+    }
+    // пользователь сам регистрируется
+    else {
+      // обёртка для темизации формы
+      $form['#prefix'] = '<div class="user-auth-form-wrapper">';
+      $form['#prefix'] .= '<h1>' . t('Register', [], ['context' => 'account']) . '</h1>';
+      $form['#prefix'] .= '<div class="user-links"><a href="/user/login">' . t('Log in', [], ['context' => 'account']) . '</a> ' . t('or') . ' <a href="/user/password">' . t('Recover password') . '</a></div>';
+      $form['#suffix'] = '</div>';
+
+//      $form["profile_main"]["field_user_photo"]["#access"] = FALSE;
+      $form["profile_main"]["field_user_name2"]["#access"] = FALSE;
+
+      if (isset($form["fz152_agreement"])) $form["fz152_agreement"]["#weight"] = 10;
+      $form["actions"]["#weight"] = 11;
+    }
+
+    // обработчики
+    $form['#validate'][] = 'ext_user_user_register_form_email_validate';
+    $form['#submit'][] = 'ext_user_user_register_form_submit';
+  }
+  // отключить обязательные поля для админа
+  else {
+    $form["profile_main"]["field_user_phone"]["und"][0]['value']["#required"] = false;
+    $form["profile_company"]["field_company_name"]["und"][0]['value']['#required'] = false;
+    $form["profile_company"]["field_company_country"]["und"][0]['value']['#required'] = false;
+    $form["profile_company"]["field_company_city"]["und"][0]['value']['#required'] = false;
+  }
+}
+
+/**
+ * Проверка E-mail на спам при регистрации
+ */
+function ext_user_user_register_form_email_validate($form, &$form_state)
+{
+  // отсеять нежелательные (спамерские) email
+  foreach(['!.*@.*\.us!s', '!.*@.*\.link!s', '!.*@.*\.co\.uk!s', '!.*@.*\.work!s', '!.*@.*\.website!s',
+            '!.*@.*\.app!s', '!.*@.*\.ltd!s', '!.*@.*\.net!s', '!.*@.*\.online!s', '!.*@.*\.store!s', '!.*@.*\.info!s',
+            '!.*@.*\.site!s', '!.*@.*\.gq!s', '!.*@.*\.network!s', '!.*@.*\.xyz!s', '!.*@.*\.cf!s', '!.*@.*\.club!s', '!.*@.*\.jokeray\.com!s', '!.*@.*\.dynainbox\.com!s'
+            , '!.*@.*\.mailsmail\.ru!s', '!.*@.*\.mailyaha\.ru!s', '!.*@.*\.aolmail\.fun!s', '!.*@.*\.osakass\.!s'] as $pattern) {
+    if (preg_match($pattern, $form_state['values']['mail'])) {
+      form_set_error('mail', t('Registration unavailable.'));
+    }
+  }
+}
+
+function ext_user_user_register_form_submit($form, &$form_state)
+{
+  // письмо менеджеру о регистрации пользователя
+  $params['user_id'] = $form["#user"]->uid;
+  $lang = language_list()['ru'];
+  drupal_mail('ext_mail', 'user_registration', variable_get('eva_manager_email', ''), $lang, $params);
+
+  // редирект
+  if (user_has_role(EDITOR_RID)) {
+    // редактор на страницу профиля новорега
+    $form_state['redirect'] = 'user/' . $form["#user"]->uid . '/edit/staff';
+  } else {
+    // на страницу авторизации после регистрации
+    $form_state['redirect'] = 'user/login';
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function ext_user_form_user_profile_form_alter(&$form, &$form_state)
+{
+  if ($GLOBALS['theme'] != 'seven') {
+    if ($form["#user_category"] == 'account') {
+      // убрать поля
+      $form["locale"]["#access"] = false;
+      $form["mimemail"]["#access"] = false;
+      $form["account"]["name"]["#access"] = false;
+      $form["field_text"]["#access"] = false;
+
+      // изменить вид полей
+      $form['account']['mail']['#title'] = 'E-Mail';
+      $form['account']['mail']['#disabled'] = true;
+      unset($form['account']['mail']['#description']);
+      $form["account"]["mail"]["#weight"] = -6;
+
+      if (user_own_account()) {
+        // если это не форма смены пароля
+        if ($form["account"]["current_pass"]["#access"]) {
+          $form['account']['current_pass']['#prefix'] = '<div class="row"><div class="col-xs-12 col-md-4">';
+          $form['account']['current_pass']['#suffix'] = '</div>';
+          $form['account']['current_pass']['#title'] = 'Текущий пароль';
+          $form["account"]["current_pass"]["#description"] = 'Для смены пароля необходимо ввести старый пароль.';
+          $form["account"]["current_pass"]["#type"] = 'textfield';
+          $form["account"]["current_pass"]["#weight"] = -4;
+          $form['account']['pass']['#prefix'] = '<div class="col-xs-12 col-md-4">';
+          $form['account']['pass']['#suffix'] = '</div></div>';
+        }
+        $form['account']['pass']['#title'] = 'Новый пароль';
+        $form['account']['pass']['#type'] = 'textfield';
+        unset($form["account"]["pass"]["#description"]);
+
+        // не выводить статус
+        $form["account"]["status"]["#access"] = false;
+      } else {
+        // не выводить смену пароля
+        $form["account"]["current_pass"]["#access"] = false;
+        $form["account"]["pass"]["#access"] = false;
+      }
+    }
+
+    if ($form["#user_category"] == 'main') {
+      $form["profile_main"]["field_user_photo"]["und"][0]["#description"] = '';
+      if (isset($form["profile_main"]["revision_information"])) $form["profile_main"]["revision_information"]['#access'] = false;
+    }
+
+    $form["#submit"][] = 'ext_user_form_user_profile_form_submit';
+  }
+}
+
+function ext_user_form_user_profile_form_submit($form, &$form_state)
+{
+  $form_state['redirect'] = 'user';
+}
+
+/**
+ * Implements hook_username_alter().
+ */
+function ext_user_username_alter(&$name, $account)
+{
+  if (empty($account->uid)) {
+    // Don't alter anonymous users or objects that do not have any user ID.
+    return;
+  }
+
+  $result = &drupal_static(__FUNCTION__ . $account->uid);
+
+  if (empty($result)) {
+    // Real name was loaded/generated via hook_user_load(), so re-use it.
+    // devel в админке запрашивает имена всех пользователей, поэтому не стОит использовать ext_user_get_user_info
+    $dbr = db_select('profile', 'p');
+    $dbr->innerJoin('field_data_field_user_name', 'fun', 'fun.entity_id = p.pid');
+    $dbr->leftJoin('field_data_field_user_surname', 'fus', 'fus.entity_id = p.pid');
+    $dbr->condition('p.uid', $account->uid);
+    $dbr->addField('fun', 'field_user_name_value', 'name');
+    $dbr->addField('fus', 'field_user_surname_value', 'surname');
+    if ($fio = $dbr->execute()->fetchAll()) {
+      $fio = reset($fio);
+      $result = $fio->name . ($fio->surname ? ' ' . $fio->surname : '');
+    }
+  }
+
+  $name = $result ?? $name;
+}
+
+/**
+ * Implements menu callback
+ *
+ * Функция, заменяющая стандартный автокомплит выбора пользователя.
+ * Позволяет искать по своим полям Имени и Фамилии
+ */
+function ext_user_user_autocomplete($string = '')
+{
+  $matches = array();
+  if ($string) {
+    $dbr = db_select('users', 'u');
+    $dbr->innerJoin('profile', 'p', 'p.uid = u.uid');
+    $dbr->innerJoin('field_data_field_user_name', 'fun', 'fun.entity_id = p.pid');
+    $dbr->leftJoin('field_data_field_user_surname', 'fus', 'fus.entity_id = p.pid');
+    $dbr->addField('u', 'name');
+    $dbr->addField('fun', 'field_user_name_value', 'p_name');
+    $dbr->addField('fus', 'field_user_surname_value', 'p_surname');
+    if ($result = $dbr->execute()->fetchAll()) {
+
+      foreach ($result as $user) {
+        if (count($matches) < 10) {
+          if (strpos(drupal_strtolower($user->p_name), drupal_strtolower($string)) !== false || strpos(drupal_strtolower($user->p_surname), drupal_strtolower($string)) !== false) {
+            $matches[$user->name] = check_plain($user->p_name . ($user->p_surname ? ' ' . $user->p_surname : ''));
+          }
+        }
+      }
+    }
+  }
+  drupal_json_output($matches);
+}
+
+/**
+ * -- Вспомогательные функции --------------------------------------------------
+ */
+
+/**
+ * Загрузить пользователя по указанному логину
+ */
+function ext_user_user_load_by_login($login)
+{
+  // Try loading by email.
+  if ($user = user_load_by_mail($login)) {
+    return $user;
+  }
+
+  // Try loading by username.
+  if ($user = user_load_by_name($login)) {
+    return $user;
+  }
+  return user_load(0);
+}
+
+
+/**
+ * Вернуть массив с информацией о Пользователе
+ */
+function ext_user_get_user_info($user = null)
+{
+  if (empty($user)) $user = $GLOBALS['user']->uid;
+  $key = $user->uid ?? $user;
+  $result = &drupal_static(__FUNCTION__ . serialize($key));
+
+  if (empty($result)) {
+    $account = is_numeric($user) ? user_load($user) : $user;
+
+    $name_full = $surname = $name = $name2 = $email = $phone = '';
+    $label = t('User');
+
+    $email = $account->mail;
+
+    if (!empty($account->uid)) {
+      if ($main_pr2 = profile2_load_by_user($account, 'main')) {
+        $main_wr = entity_metadata_wrapper('profile2', $main_pr2);
+        $surname = $main_wr->field_user_surname->value();
+        $name = $main_wr->field_user_name->value();
+        $name2 = $main_wr->field_user_name2->value();
+        $name_full = $surname . ' ' . $name . ($name2 ? '&nbsp;' . $name2 : '');
+
+        $phone = $main_wr->field_user_phone->value() ? $main_wr->field_user_phone->value() : '';
+      }
+
+      // счётчики
+      $counts = [];
+      if (module_exists('sec_wishlist')) {
+        $result = sec_wishlist_get_items_in_wishlist($account->uid);
+        $counts['wishlist'] = [
+          'title' => t('Wishlist'),
+          'amount' => (int)$result,
+          'url' => $result ? '/user/' . $account->uid . '/wishlist' : '',
+        ];
+      }
+      if (module_exists('sec_store')) {
+        $result = 0;
+        $counts['cart'] = [
+          'title' => t('Cart'),
+          'amount' => $result,
+          'url' => $result ? '/user/cart' : '',
+        ];
+
+      }
+    }
+
+    $result = [
+      'id' => $account->uid,
+      'status' => $account->status,
+      'label' => $label,
+      'email' => $email,
+      'main' => [
+        'surname' => $surname,
+        'name' => $name,
+        'name2' => $name2,
+        'name_full' => $name_full,
+        'name_short' => $name . ' ' . $surname,
+        'phone' => $phone,
+      ],
+      'counts' => $counts,
+      'url' => url('user/' . $account->uid)
+    ];
+  }
+
+  return $result;
+}
+
+/**
+ * Проверить, просматривает ли Пользователь свой аккаунт
+ */
+function user_own_account()
+{
+  return !empty($GLOBALS['user']->uid) && $GLOBALS['user']->uid == arg(1);
+}

@@ -1,0 +1,138 @@
+<?php
+
+const MAIL_RECIPIENT_USER = 1;
+const MAIL_RECIPIENT_MANAGER = 2;
+
+/**
+ * Implements hook_mail_alter
+ */
+function ext_mail_mail_alter(&$message)
+{
+  if (strpos($_SERVER['HTTP_HOST'], '.local') !== FALSE) {
+    $message['send'] = false;
+    watchdog('mailer', 'Эмуляция отправки E-Mail.<br />Почта: %mail<br />Тема: %subject<br />Текст: %body', ['%mail' => $message['to'], '%subject' => $message['subject'], '%body' => var_export($message['body'], true)], WATCHDOG_DEBUG);
+  } else {
+    watchdog('mailer', 'Отправка E-Mail.<br />Почта: %mail <br />Тема: %subject<br />Текст: %body', ['%mail' => $message['to'], '%subject' => $message['subject'], '%body' => var_export($message['body'], true)], WATCHDOG_DEBUG);
+  }
+}
+
+/**
+ * Implements hook_mail
+ */
+function ext_mail_mail($key, &$message, $params)
+{
+  switch($key) {
+    case 'order_status':
+      if ($params['recipient'] == MAIL_RECIPIENT_MANAGER) {
+        $message['subject'] = t('New order on @site website.', ['@site' => variable_get('site_name')]);
+      } else {
+        $message['subject'] = t('About your order on @site website.', ['@site' => variable_get('site_name')]);
+      }
+      $message['body'][] = ext_mail_order_status_mail_text($params['order_id'], $params['recipient']);
+
+      break;
+
+    case 'user_registration':
+      $message['subject'] = t('New user registration at @site website.', ['@site' => variable_get('site_name')]);
+      $message['body'][] = ext_mail_user_registration_mail_text($params['user_id']);
+
+      break;
+  }
+}
+
+/**
+ * Вернуть текст письма о Регистрации пользователя
+ */
+function ext_mail_user_registration_mail_text($user_id)
+{
+  $message =  '<h2>' . t('Good day!') . '</h2>' .
+              '<p>На сайте ' . variable_get('site_name') . ' зарегистрировался новый пользователь.<br>' .
+              'Для проверки карточки и активации аккаунта перейдите по <a href="' . url('user/' . $user_id . '/edit', ['absolute' => true]) . '">ссылке</a></p>';
+
+  return $message;
+}
+
+/**
+ * Вернуть текст письма о Заказе
+ */
+function ext_mail_order_status_mail_text($order_id, $recipient = MAIL_RECIPIENT_USER)
+{
+  $order_info = sec_store_get_order_info($order_id, true);
+
+  // повторяющиеся стили
+  $dt = 'width: 160px; text-align: right; color: #bbb; padding-right: 15px; vertical-align: top;';
+  $dd = 'padding-bottom: 15px;';
+  $td = 'border-bottom: 1px solid #ccc; border-right: 1px solid #ccc; padding: 4px 8px;';
+
+  // список препаратов для письма
+  $prep_table = t('No preparations selected');
+  if (count($order_info['items'])) {
+    $table = array(
+      'header' => array(
+        array('data' => t('Product'),   'style' => $td . 'width: 200px; text-align:center;'),
+        array('data' => t('Tare'),      'style' => $td . 'width: 100px; text-align:center;'),
+        array('data' => t('Qty'),       'style' => $td . 'width: 80px; text-align:center;'),
+      ),
+    );
+    foreach($order_info["items"] as $item) {
+      $product = $item['product'];
+      $table['rows'][] = [
+        ['data' => $product['label'], 'style' => $td],
+        ['data' => $item['tare']['label'], 'style' => $td],
+        ['data' => $item['qty'], 'style' => $td . ' text-align: center;'],
+      ];
+    }
+
+    $prep_table = theme('table', [
+      'header' => $table['header'],
+      'rows' => $table['rows'],
+      'attributes' => array('cellspacing' => 0, 'style' => 'font-size: .8em; border-top: 1px solid #ccc; border-left: 1px solid #ccc;'),
+    ]);
+  }
+
+  if ($recipient == MAIL_RECIPIENT_MANAGER) {
+    $message = '<p>' . t('The is a new order on %site website.', ['%site' => variable_get('site_name')]) . '</p>';
+  } else {
+    if ($order_info['status']['id'] == ORDER_STATUS_PROCESSING) {
+      $message = '<p>' . t('You made an order on %site website.<br />Our representative will contact you as soon as possible.', ['%site' => variable_get('site_name')]) . '</p>';
+    } else {
+      $message = '<p>' . t('Status of your order #@order changed to "@status".', ['@status' => $order_info['status']['label'], '@order' => $order_info['number']]) . '</p>';
+    }
+  }
+
+  // содержимое письма
+  $message = '<h2>' . t('Good day!') . '</h2>'
+    . $message
+    . '<table style="margin-bottom: 15px;">'
+    . '<tr>'
+    . '<td style="' . $dt . '">' . t('Order number') . '</td>'
+    . '<td style="' . $dd . '">#' . $order_info['number'] . '</td>'
+    . '</tr>'
+
+    . '<tr>'
+    . '<td style="' . $dt . '">' . t('User info') . '</td>'
+    . '<td style="' . $dd . '">'
+    . ($order_info['username'] ? $order_info['username'] . '<br />' : '')
+    . ($order_info['email'] ? $order_info['email'] . '<br />' : '')
+    . ($order_info['phone'] ?: '')
+    . '</td>'
+    . '</tr>';
+
+  $message .= '<tr>'
+    . '<td style="' . $dt . '">' . t('Items') . '</td>'
+    . '<td style="' . $dd . '">'
+    . $prep_table
+    . '</td>'
+    . '</tr>';
+
+  if (!empty($order_info["comment"])) {
+    $message .= '<tr>'
+      . '<td style="' . $dt . '">' . t('Comment') . '</td>'
+      . '<td style="' . $dd . '">' . $order_info["comment"] . '</td>'
+      . '</tr>';
+  }
+
+  $message .= '</table>';
+
+  return $message;
+}
