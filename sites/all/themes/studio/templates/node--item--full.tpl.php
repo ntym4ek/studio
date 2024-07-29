@@ -126,7 +126,7 @@
           <?php print render($content['field_price']); ?>
         </div>
         <div class="node-buy">
-          <a href="#" class="btn btn-brand btn-wide">Добавить в корзину</a>
+          <?php print $add_to_cart_btn; ?>
         </div>
         <div class="node-text">
           <?php print render($content['body']); ?>

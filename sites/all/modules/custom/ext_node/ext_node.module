@@ -113,7 +113,7 @@ function ext_node_preprocess_node(&$vars)
       $vars['add_to_cart_btn'] = theme('cart_btn', ['in_cart' => $in_cart, 'product_id' => $node->nid]);
     } else {
       // кнопка на форму обратной связи
-      $vars['add_to_cart_btn'] = l(t('I want such'), 'node/4', ['attributes' => ['class' => ['btn', 'btn-brand']]]);
+      $vars['add_to_cart_btn'] = l(t('I want such'), 'node/4', ['attributes' => ['class' => ['btn', 'btn-brand', 'btn-wide']], 'query' => ['message' => t('I`m interested in «@item». Contact me, please.', ['@item' => $product_info['label']])]]);
     }
   }
 

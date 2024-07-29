@@ -186,9 +186,9 @@
           <div class="col-xs-6 col-lg-4">
             <div class="menu platforms p2">
               <ul>
-                <li><a href="#" rel="nofollow" target="_blank" title="<?php print t('VKontakte'); ?>"><?php print t('VKontakte'); ?></a></li>
+                <li><a href="https://vk.com/yulya_macrame" rel="nofollow" target="_blank" title="<?php print t('VKontakte'); ?>"><?php print t('VKontakte'); ?></a></li>
                 <li><a href="#" rel="nofollow" target="_blank" title="<?php print t('Odnoklassniki'); ?>"><?php print t('Odnoklassniki'); ?></a></li>
-                <li><a href="#" rel="nofollow" target="_blank" title="<?php print t('Yarmarka Masterov'); ?>"><?php print t('Yarmarka Masterov'); ?></a></li>
+                <li><a href="https://www.livemaster.ru/ashikhmina" rel="nofollow" target="_blank" title="<?php print t('Yarmarka Masterov'); ?>"><?php print t('Yarmarka Masterov'); ?></a></li>
               </ul>
             </div>
           </div>

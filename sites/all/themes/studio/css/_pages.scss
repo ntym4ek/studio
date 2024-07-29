@@ -59,7 +59,15 @@
   }
 }
 
+.node-full {
+  margin-bottom: 2rem;
+  @media #{$tablet} {
+    margin-bottom: 4rem;
+  }
+}
+
 .node-full.node-item {
+
   .node-category {
     text-transform: uppercase;
   }

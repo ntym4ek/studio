@@ -70,6 +70,10 @@ a {
   }
 }
 
+.breadcrumb {
+  .last { color: $brand-color; }
+}
+
 .carousel {
   position: relative;
 }

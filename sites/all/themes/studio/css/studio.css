@@ -2145,6 +2145,9 @@ a {
   .page-footer .menu.platforms.p2 {
     text-align: right; }
 
+.breadcrumb .last {
+  color: #c9995b; }
+
 .carousel {
   position: relative; }
 
@@ -2261,6 +2264,12 @@ a {
     flex: 0 0 auto;
     display: flex;
     justify-content: center; }
+
+.node-full {
+  margin-bottom: 2rem; }
+  @media only screen and (min-width: 1024px) {
+    .node-full {
+      margin-bottom: 4rem; } }
 
 .node-full.node-item .node-category {
   text-transform: uppercase; }
