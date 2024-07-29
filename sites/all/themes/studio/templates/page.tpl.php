@@ -2,7 +2,7 @@
 
   <div class="nav-mobile">
     <div class="branding">
-      <div class="logo"><a href="<?php print url('<front>'); ?>"><img src="<?php print $logo; ?>" /></a></div>
+      <div class="logo"><a href="<?php print url('<front>'); ?>"><img src="<?php print $logo_inverted; ?>" alt="Студия макраме" /></a></div>
     </div>
     <?php if (isset($search_form_mobile)): ?>
       <div class="search hide-lg">
@@ -33,7 +33,7 @@
           </div>
           <div class="col col-2 full-height">
             <div class="branding">
-              <div class="logo"><a href="<?php print url('<front>'); ?>"><img src="<?php print $logo; ?>" /></a></div>
+              <div class="logo"><a href="<?php print url('<front>'); ?>"><img src="<?php print $logo; ?>" alt="Студия макраме" /></a></div>
             </div>
           </div>
           <div class="col col-3 full-height hide-xs show-lg">

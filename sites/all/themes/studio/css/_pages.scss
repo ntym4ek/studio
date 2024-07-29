@@ -30,6 +30,11 @@
   height: 100%;
   .image {
     height: 15rem;
+    img {
+      display: block;
+      object-fit: cover;
+      width: 100%; height: 100%;
+    }
   }
   .node-info {
     border: 1px solid $gray-lightest;
@@ -62,8 +67,8 @@
     color: $brand-color; font-size: $font-size-h2;
     margin-bottom: 1rem;
   }
-  .node-price {
-
+  .node-images {
+    .image { text-align: center; }
   }
 }
 

@@ -30,5 +30,9 @@ function sec_about_theme()
 
 function sec_about_page()
 {
+  if (variable_get('path_breadcrumbs_home_link_enabled')) $breadcrumbs[] = l(t('Home'), null);
+  $breadcrumbs[] = t('About');
+  drupal_set_breadcrumb($breadcrumbs);
+
   return theme('about_page');
 }
