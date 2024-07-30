@@ -21,7 +21,7 @@ function ext_block_block_view($delta = '')
 
   // блоки с динамически формируемым содержимым
   if ($delta == 'custom-block-new-items') {
-    if ($novelties = sec_catalog_get_new_items()) {
+    if ($novelties = sec_catalog_get_promoted_items()) {
       $cards = [];
       foreach ($novelties as $product) {
         $view = node_view($product, 'teaser');

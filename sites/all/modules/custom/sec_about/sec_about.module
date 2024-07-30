@@ -36,3 +36,10 @@ function sec_about_page()
 
   return theme('about_page');
 }
+
+function sec_about_preprocess_page(&$vars)
+{
+  if ($_GET['q'] == 'about') {
+    $vars['is_title_on'] = false;
+  }
+}

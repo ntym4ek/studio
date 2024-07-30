@@ -44,13 +44,14 @@ function sec_catalog_get_product_info($node)
   return $product;
 }
 
-function sec_catalog_get_new_items()
+function sec_catalog_get_promoted_items()
 {
   $products = [];
 
   $dbr = db_select('node', 'n');
   $dbr->condition('n.type', 'item');
   $dbr->condition('n.status', '1');
+  $dbr->condition('n.promote', '1');
   $dbr->addField('n', 'nid');
   $dbr->orderBy('n.title');
   if ($nodes = $dbr->execute()->fetchCol()) {

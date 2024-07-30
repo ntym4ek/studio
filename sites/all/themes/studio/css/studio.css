@@ -2126,6 +2126,8 @@ a {
   min-width: 260px; }
   .page-header .sub-menu > li.leaf:not(.last) a {
     border-bottom: 1px solid #E9E9E9; }
+.page-header .user-menu {
+  margin-left: 1rem; }
 @media only screen and (min-width: 1024px) {
   .page-header .branding .brand {
     font-size: 3em; } }
@@ -2150,6 +2152,34 @@ a {
 
 .carousel {
   position: relative; }
+
+ul.action-links {
+  display: flex;
+  padding: 0; }
+  ul.action-links li {
+    list-style: none;
+    padding: 0; }
+    ul.action-links li a {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      background: transparent;
+      color: #333;
+      text-decoration: none;
+      text-align: center;
+      transition: all 200ms;
+      cursor: pointer;
+      margin-bottom: 0;
+      border: 1px solid transparent;
+      border-radius: 1px;
+      min-height: 2.3em;
+      padding: .45em 1em;
+      background: #c9995b;
+      border-color: #c9995b;
+      color: #fff; }
+      ul.action-links li a:not(.btn-static):hover, ul.action-links li a:not(.btn-static):focus {
+        background: #bd863e;
+        border-color: #bd863e; }
 
 .underline {
   background: #c9995b;
@@ -2319,6 +2349,27 @@ a {
       .page40x .b2 {
         flex: 1 1 50%;
         padding: 0 6rem; } }
+
+.page-admin .page-main {
+  margin-bottom: 2rem; }
+.page-admin table {
+  font-size: .8rem;
+  width: 100%; }
+.page-admin #node-admin-content #edit-filters {
+  font-size: .8rem; }
+.page-admin #node-admin-content #edit-options {
+  display: none; }
+.page-admin #node-admin-content .filters .form-item {
+  margin-right: 1rem; }
+@media only screen and (min-width: 1024px) {
+  .page-admin .page-main {
+    margin-bottom: 4rem; } }
+
+.tabledrag-toggle-weight-wrapper {
+  display: none; }
+
+table#taxonomy th:last-child {
+  width: 150px; }
 
 .block-new-items .carousel-products .swiper-slide {
   height: auto; }

@@ -15,6 +15,9 @@
       </div>
       <div>
         <?php if ($secondary_nav): print $secondary_nav; endif; ?>
+        <?php if (!empty($user_nav)): ?>
+          <?php print $user_nav; ?>
+        <?php endif; ?>
       </div>
     </div>
   </div>
@@ -41,6 +44,9 @@
               <div class="secondary-menu">
                 <?php if ($secondary_nav): print $secondary_nav; endif; ?>
               </div>
+              <?php if (!empty($user_nav)): ?>
+              <div class="user-menu"><?php print $user_nav; ?></div>
+              <?php endif; ?>
             </div>
           </div>
           <div class="col col-4 full-height hide-lg">

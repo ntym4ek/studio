@@ -113,7 +113,14 @@ function ext_node_preprocess_node(&$vars)
       $vars['add_to_cart_btn'] = theme('cart_btn', ['in_cart' => $in_cart, 'product_id' => $node->nid]);
     } else {
       // кнопка на форму обратной связи
-      $vars['add_to_cart_btn'] = l(t('I want such'), 'node/4', ['attributes' => ['class' => ['btn', 'btn-brand', 'btn-wide']], 'query' => ['message' => t('I`m interested in «@item». Contact me, please.', ['@item' => $product_info['label']])]]);
+      $vars['add_to_cart_btn'] = l(
+        t('I want such'),
+        'node/4',
+        [
+          'attributes' => ['class' => ['btn', 'btn-brand', 'btn-wide']],
+          'query' => ['message' => t('I`m interested in «@item». Contact me, please.', ['@item' => $product_info['label']])]
+        ]
+      );
     }
   }
 
@@ -143,15 +150,10 @@ function ext_node_form_alter(&$form, &$form_state, $form_id)
  */
 function ext_node_form_node_form_alter(&$form, &$form_state)
 {
-  if (in_array($form["type"]["#value"], ['article', 'item'])) {
+  if (in_array($form["type"]["#value"], ['item'])) {
     // убрать неиспользуемые опции
-//    $form["options"]["sticky"]["#access"] = false;
-
-    // изменить формат поля Body на "Редактор текста", если формат ранее не был установлен
-    $lang = $GLOBALS['language']->language;
-    if (isset($form["body"][$lang][0]["#type"]) && $form["body"][$lang][0]["#type"] == 'text_format' && !$form["body"][$lang][0]["#format"]) {
-      $form["body"][$lang][0]["#format"] = 'filtered_html';
-    }
+    $form["options"]["sticky"]["#access"] = false;
+    $form["author"]["#access"] = false;
   }
 }
 
